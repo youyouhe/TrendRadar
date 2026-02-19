@@ -190,7 +190,7 @@ Write-Host "   - 确认已安装 Node.js: https://nodejs.org/" -ForegroundColor 
 Write-Host "   - 确认 node.exe 在 PATH 环境变量中" -ForegroundColor Gray
 Write-Host ""
 Write-Host "2. 如果 daemon.js 未找到:" -ForegroundColor White
-Write-Host "   - 重新安装: npm uninstall -g agent-browser && npm install -g agent-browser" -ForegroundColor Gray
+Write-Host "   - 重新安装: npm uninstall -g agent-browser; npm install -g agent-browser" -ForegroundColor Gray
 Write-Host ""
 Write-Host "3. 如果端口被占用:" -ForegroundColor White
 Write-Host "   - 使用不同的会话名（会计算不同端口）" -ForegroundColor Gray
