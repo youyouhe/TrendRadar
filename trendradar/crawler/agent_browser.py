@@ -240,7 +240,8 @@ class AgentBrowser:
             wait_until: 等待条件（load | domcontentloaded | networkidle）
         """
         # agent-browser 使用 "open" 命令
-        self._run("open", url)
+        # 不需要捕获输出，避免 Windows 上的死锁
+        self._run("open", url, capture_output=False)
 
     def click(
         self,
@@ -268,7 +269,7 @@ class AgentBrowser:
             browser.click(placeholder="请输入关键词")
         """
         locator = self._build_locator(ref, role, name, placeholder, text)
-        self._run("click", locator)
+        self._run("click", locator, capture_output=False)
         if wait_ms > 0:
             time.sleep(wait_ms / 1000)
 
@@ -290,7 +291,7 @@ class AgentBrowser:
         """
         locator = self._build_locator(ref=ref, placeholder=placeholder)
         # agent-browser fill 命令: fill <selector> <text>
-        self._run("fill", locator, value)
+        self._run("fill", locator, value, capture_output=False)
         if wait_ms > 0:
             time.sleep(wait_ms / 1000)
 
@@ -302,7 +303,7 @@ class AgentBrowser:
             key: 按键名称（Enter, Escape, Tab, ArrowDown 等）
             wait_ms: 按键后等待时间（毫秒）
         """
-        self._run("press", key)
+        self._run("press", key, capture_output=False)
         if wait_ms > 0:
             time.sleep(wait_ms / 1000)
 
@@ -339,14 +340,14 @@ class AgentBrowser:
             options.append("--full")
 
         Path(save_to).parent.mkdir(parents=True, exist_ok=True)
-        self._run("screenshot", save_to, options=options)
+        self._run("screenshot", save_to, capture_output=False, options=options)
 
     def close(self) -> None:
         """
         关闭浏览器会话
         """
         try:
-            self._run("close")
+            self._run("close", capture_output=False)
         except AgentBrowserError:
             pass  # 会话可能已关闭
 
