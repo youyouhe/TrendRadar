@@ -7,21 +7,24 @@
 
 from trendradar.crawler.tender.base import TenderSource, TenderData, TenderStatus
 from trendradar.crawler.tender.shandong import ShandongTenderSource
+from trendradar.crawler.tender.guangdong import GuangdongTenderSource
 
 __all__ = [
     "TenderSource",
     "TenderData",
     "TenderStatus",
     "ShandongTenderSource",
+    "GuangdongTenderSource",
 ]
 
 
 # 省份代码映射
 PROVINCE_SOURCES = {
     "shandong": ShandongTenderSource,
+    "guangdong": GuangdongTenderSource,
     # 未来扩展：
-    # "guangdong": GuangdongTenderSource,
     # "zhejiang": ZhejiangTenderSource,
+    # "beijing": BeijingTenderSource,
 }
 
 
