@@ -56,13 +56,14 @@ HTML内容：
 """
 
 
-def parse_page_with_deepseek(html_content: str, api_key: str) -> dict:
+def parse_page_with_deepseek(html_content: str, api_key: str, custom_prompt: str = None) -> dict:
     """
     使用 DeepSeek API 解析网页内容
 
     Args:
         html_content: 网页HTML内容
         api_key: DeepSeek API密钥
+        custom_prompt: 自定义提示词模板（可选，默认使用 EXTRACTION_PROMPT）
 
     Returns:
         解析后的结构化数据（dict）
@@ -73,9 +74,10 @@ def parse_page_with_deepseek(html_content: str, api_key: str) -> dict:
     )
 
     # 构建提示词
-    prompt = EXTRACTION_PROMPT.format(html_content=html_content[:20000])  # 限制长度避免超token
+    prompt_template = custom_prompt or EXTRACTION_PROMPT
+    prompt = prompt_template.format(html_content=html_content[:20000])  # 限制长度避免超token
 
-    print("  调用 DeepSeek API 解析页面...")
+    print("  调用 DeepSeek API...")
 
     response = client.chat.completions.create(
         model="deepseek-chat",
@@ -154,40 +156,53 @@ def main():
         print("  ✓ 搜索完成")
         print()
 
-        # 点击第一个项目
-        print("步骤5: 进入第一个项目详情...")
-        # 需要找到第一个项目链接并点击
-        # 这里简化处理，直接使用CSS选择器
-        browser._run("click", "a[title*='招标'], a[title*='采购']", capture_output=False)
-        browser.wait(3000)
-        print("  ✓ 详情页加载完成")
+        # 获取搜索结果页HTML
+        print("步骤5: 获取搜索结果页HTML...")
+        search_html = browser.get_content()
+        print(f"  ✓ 获取到 {len(search_html)} 字符的HTML")
         print()
 
-        # 获取页面HTML
-        print("步骤6: 获取页面HTML内容...")
-        html_content = browser.get_content()
-        print(f"  ✓ 获取到 {len(html_content)} 字符的HTML")
-        print()
+        # 使用 DeepSeek 解析搜索结果，提取项目列表
+        print("步骤6: 使用 DeepSeek 解析搜索结果页...")
+        list_prompt = """
+请从以下招标搜索结果页面HTML中提取项目列表，以JSON格式输出。
 
-        # 使用 DeepSeek 解析
-        print("步骤7: 使用 DeepSeek API 解析页面...")
-        result = parse_page_with_deepseek(html_content, api_key)
+要提取的字段（数组，每个项目包含）：
+- title: 项目完整标题
+- category: 公告类型（从标题中提取，如：公开招标、中标公告等）
+- region: 所属地区（从标题中提取，如有）
+
+只返回前5个项目的JSON数组，不要其他说明文字。
+
+HTML内容：
+{html_content}
+"""
+
+        list_result = parse_page_with_deepseek(
+            search_html[:20000],
+            api_key,
+            custom_prompt=list_prompt
+        )
         print("  ✓ 解析完成")
+
+        # 提取项目列表
+        projects = list_result if isinstance(list_result, list) else list_result.get('projects', [])
+        print(f"  ✓ 找到 {len(projects)} 个项目")
         print()
 
-        # 显示结果
+        # 显示搜索结果
         print("=" * 80)
-        print("提取结果")
+        print("搜索结果列表")
         print("=" * 80)
         print()
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        print(json.dumps(projects, ensure_ascii=False, indent=2))
         print()
 
-        # 保存结果
-        output_file = "deepseek_parsed_result.json"
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(result, f, ensure_ascii=False, indent=2)
-        print(f"✓ 结果已保存到: {output_file}")
+        # 保存搜索结果
+        search_output = "deepseek_search_results.json"
+        with open(search_output, 'w', encoding='utf-8') as f:
+            json.dump(projects, f, ensure_ascii=False, indent=2)
+        print(f"✓ 搜索结果已保存到: {search_output}")
         print()
 
         # 关闭浏览器
@@ -196,19 +211,34 @@ def main():
         print()
 
         print("=" * 80)
-        print("成功！")
+        print("✅ 成功！")
         print("=" * 80)
         print()
-        print("💡 优势:")
-        print("  - 自动识别页面结构")
-        print("  - 提取语义化字段")
-        print("  - 不需要写复杂的解析规则")
-        print("  - 适应不同网站的页面布局")
+
+        print("📊 统计:")
+        print(f"  - 搜索关键词: 软件开发")
+        print(f"  - 找到项目: {len(projects)} 个")
+        print(f"  - 输出文件: {search_output}")
         print()
+
+        print("💡 优势:")
+        print("  - 使用 LLM 智能解析，无需写复杂规则")
+        print("  - 自动识别页面结构和语义")
+        print("  - 适应各种网站布局")
+        print("  - 页面改版后仍能正常工作")
+        print()
+
         print("💰 成本（DeepSeek）:")
-        print("  - 输入: ¥0.001 / 1K tokens (~20K HTML ≈ ¥0.02)")
-        print("  - 输出: ¥0.002 / 1K tokens (~500 tokens ≈ ¥0.001)")
-        print("  - 单次解析成本: < ¥0.03")
+        print("  - 输入: ¥0.001 / 1K tokens")
+        print("  - 输出: ¥0.002 / 1K tokens")
+        print("  - 本次解析: ~¥0.02")
+        print()
+
+        print("🎯 下一步:")
+        print("  1. 查看 deepseek_search_results.json")
+        print("  2. 遍历项目列表，访问每个详情页")
+        print("  3. 用 DeepSeek 提取详细信息（预算、联系人等）")
+        print("  4. 保存到数据库")
 
     except Exception as e:
         print()
