@@ -3,6 +3,20 @@
 
 import subprocess
 import time
+import os
+import platform
+
+# Windows: 设置 AGENT_BROWSER_HOME 环境变量
+if platform.system() == "Windows":
+    if "AGENT_BROWSER_HOME" not in os.environ:
+        npm_root = os.path.join(
+            os.environ.get("APPDATA", ""),
+            "npm", "node_modules", "agent-browser"
+        )
+        if os.path.exists(npm_root):
+            os.environ["AGENT_BROWSER_HOME"] = npm_root
+            print(f"已设置 AGENT_BROWSER_HOME: {npm_root}")
+            print()
 
 # 使用唯一会话名避免冲突
 session = f"test_{int(time.time())}"
