@@ -118,6 +118,8 @@ class AgentBrowser:
                 cmd,
                 input=input_data,
                 text=True,
+                encoding='utf-8',  # 显式指定 UTF-8 编码（Windows 默认是 GBK）
+                errors='replace',  # 遇到无法解码的字符时替换为 � 而不是抛出异常
                 capture_output=capture_output,
                 timeout=self.timeout / 1000,  # 转换为秒
             )
