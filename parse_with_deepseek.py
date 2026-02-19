@@ -3,6 +3,7 @@
 
 import sys
 import json
+import os
 from pathlib import Path
 from openai import OpenAI
 
@@ -13,8 +14,19 @@ if str(project_root) not in sys.path:
 
 from trendradar.crawler.agent_browser import AgentBrowser
 
+# 尝试从 .env 文件加载环境变量
+try:
+    from dotenv import load_dotenv
+    env_path = project_root / '.env'
+    if env_path.exists():
+        load_dotenv(env_path)
+        print(f"✓ 从 {env_path} 加载配置")
+except ImportError:
+    # 如果没有安装 python-dotenv，从环境变量读取
+    pass
+
 # DeepSeek API 配置
-DEEPSEEK_API_KEY = "你的DeepSeek API Key"  # 从环境变量或配置文件读取
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 
 # 提取提示词
@@ -89,19 +101,25 @@ def main():
     print()
 
     # 检查 API Key
-    import os
-    api_key = os.environ.get("DEEPSEEK_API_KEY", DEEPSEEK_API_KEY)
-    if api_key == "你的DeepSeek API Key":
-        print("❌ 请设置 DEEPSEEK_API_KEY 环境变量")
+    api_key = DEEPSEEK_API_KEY
+    if not api_key:
+        print("❌ 未找到 DEEPSEEK_API_KEY")
         print()
-        print("获取方式:")
-        print("  1. 访问 https://platform.deepseek.com/")
-        print("  2. 注册账号并获取 API Key")
-        print("  3. 设置环境变量:")
+        print("配置方式（任选其一）:")
+        print("  1. 创建 .env 文件并添加:")
+        print("     DEEPSEEK_API_KEY=sk-xxxxxx")
+        print()
+        print("  2. 设置环境变量:")
         print("     Windows: set DEEPSEEK_API_KEY=sk-xxxxxx")
         print("     Linux/Mac: export DEEPSEEK_API_KEY=sk-xxxxxx")
         print()
+        print("获取 API Key:")
+        print("  访问 https://platform.deepseek.com/")
+        print()
         return
+
+    print(f"✓ 使用 API Key: {api_key[:20]}...{api_key[-4:]}")
+    print()
 
     try:
         # 创建浏览器实例
