@@ -4,14 +4,19 @@
 import subprocess
 import time
 
+# 使用唯一会话名避免冲突
+session = f"test_{int(time.time())}"
+
 print("=" * 60)
 print("直接 subprocess 测试")
 print("=" * 60)
 print()
+print(f"会话名: {session}")
+print()
 
 # 测试1: 最简单的调用
 print("测试1: 最简单的 open 命令")
-cmd = ["agent-browser.cmd", "--session", "test_subprocess", "open", "https://example.com"]
+cmd = ["agent-browser.cmd", "--session", session, "open", "https://example.com"]
 print(f"命令: {' '.join(cmd)}")
 print()
 
@@ -34,7 +39,7 @@ print()
 
 # 测试2: snapshot 命令
 print("测试2: snapshot 命令")
-cmd2 = ["agent-browser.cmd", "--session", "test_subprocess", "snapshot"]
+cmd2 = ["agent-browser.cmd", "--session", session, "snapshot"]
 print(f"命令: {' '.join(cmd2)}")
 print()
 
