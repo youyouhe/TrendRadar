@@ -72,6 +72,18 @@ class AgentBrowser:
         self.viewport_width = viewport_width
         self.viewport_height = viewport_height
 
+        # Windows 平台：设置 AGENT_BROWSER_HOME 环境变量
+        # 这样 Rust CLI 才能找到 daemon.js
+        if platform.system() == "Windows":
+            import os
+            if "AGENT_BROWSER_HOME" not in os.environ:
+                npm_root = os.path.join(
+                    os.environ.get("APPDATA", ""),
+                    "npm", "node_modules", "agent-browser"
+                )
+                if os.path.exists(npm_root):
+                    os.environ["AGENT_BROWSER_HOME"] = npm_root
+
         # 构建基础命令
         # 格式: agent-browser [options] <command> [args]
         # Windows 平台：npm 全局命令是 .cmd 批处理文件，需要显式指定后缀
