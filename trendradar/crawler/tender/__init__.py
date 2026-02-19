@@ -5,12 +5,13 @@
 支持多省份政府采购网站的招标信息采集，使用 agent-browser 进行语义化自动化。
 """
 
-from trendradar.crawler.tender.base import TenderSource, TenderData
+from trendradar.crawler.tender.base import TenderSource, TenderData, TenderStatus
 from trendradar.crawler.tender.shandong import ShandongTenderSource
 
 __all__ = [
     "TenderSource",
     "TenderData",
+    "TenderStatus",
     "ShandongTenderSource",
 ]
 
