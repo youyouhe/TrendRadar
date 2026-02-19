@@ -37,7 +37,9 @@ LIST_PROMPT = """
 - title: 项目完整标题
 - category: 公告类型（从标题中提取，如：公开招标、中标公告、合同公告等）
 - region: 所属地区（从标题中提取，如有，如"石景山区"）
-- url_hint: 如果能从HTML中找到项目详情页链接，提取链接文本特征（用于后续定位）
+- detail_url: 项目详情页的完整URL（从HTML的<a>标签href属性中提取，必须是完整的URL）
+
+**重要**: detail_url 必须是完整的可访问URL，如果是相对路径需要补全为 http://www.ccgp-beijing.gov.cn/... 格式。
 
 只返回JSON数组，不要其他说明文字。提取前10个项目。
 
@@ -166,23 +168,22 @@ def collect_tenders(keyword: str, api_key: str, max_items: int = 5):
         # 逐个采集详情
         for i, project in enumerate(projects_to_collect, 1):
             title = project.get('title', 'Unknown')
+            detail_url = project.get('detail_url', '')
+
             print(f"  [{i}/{len(projects_to_collect)}] {title[:60]}...")
 
-            try:
-                # 方法：在当前搜索结果页，查找包含标题关键词的链接并点击
-                # 使用标题的前30个字符作为特征
-                title_keyword = title[:30].replace('[', '').replace(']', '')
+            # 检查是否有详情页URL
+            if not detail_url:
+                print(f"    ⚠️  未找到详情页URL，跳过")
+                print()
+                continue
 
-                # 尝试点击链接
-                # 注意：这里使用文本内容定位，agent-browser 支持 text= 语法
-                try:
-                    # 尝试使用部分标题文本定位链接
-                    browser._run("click", f'a:has-text("{title_keyword[:20]}")', capture_output=False)
-                    browser.wait(3000)
-                except:
-                    # 如果失败，尝试备用方案：使用第N个项目链接
-                    print(f"    ⚠️  无法通过标题定位，跳过")
-                    continue
+            print(f"    URL: {detail_url[:80]}...")
+
+            try:
+                # 直接访问详情页URL（更稳定）
+                browser.goto(detail_url)
+                browser.wait(3000)
 
                 # 获取详情页HTML
                 detail_html = browser.get_content()
@@ -197,30 +198,13 @@ def collect_tenders(keyword: str, api_key: str, max_items: int = 5):
                 print(f"    ✓ 预算: {detail.get('budget', 'N/A')} 万元")
                 print(f"    ✓ 采购人: {detail.get('purchaser', 'N/A')}")
 
-                # 返回搜索结果页（点击浏览器后退按钮）
-                browser.press("Escape")  # 可能有弹窗
-                browser.wait(500)
-                # 注意：agent-browser 可能没有 back() 方法，需要重新搜索
-                # 这里简化处理：重新访问搜索页面
-                browser.goto("http://www.ccgp-beijing.gov.cn/")
-                browser.wait(1000)
-                browser._run("fill", '[placeholder="请输入搜索内容"]', keyword, capture_output=False)
-                browser.press("Enter")
-                browser.wait(2000)
-
             except Exception as e:
                 print(f"    ❌ 采集失败: {e}")
-                # 尝试恢复到搜索页
-                try:
-                    browser.goto("http://www.ccgp-beijing.gov.cn/")
-                    browser.wait(1000)
-                    browser._run("fill", '[placeholder="请输入搜索内容"]', keyword, capture_output=False)
-                    browser.press("Enter")
-                    browser.wait(2000)
-                except:
-                    pass
 
             print()
+
+            # 每采集一个项目后短暂休息
+            time.sleep(1)
 
         # 保存最终结果
         output_file = f"batch_collect_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
