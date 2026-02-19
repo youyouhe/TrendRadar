@@ -71,7 +71,7 @@ try:
     print("  (超时: 30秒)")
 
     def navigate_test():
-        browser.navigate("https://example.com")
+        browser.goto("https://example.com")
         return browser.snapshot()
 
     snapshot = test_with_timeout(navigate_test, timeout_seconds=30)
