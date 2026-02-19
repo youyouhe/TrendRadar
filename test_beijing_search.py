@@ -47,8 +47,10 @@ try:
 
     # 输入搜索关键词
     print(f"步骤4: 输入搜索关键词 '{SEARCH_KEYWORD}'...")
-    # 使用语义化定位器：placeholder="请输入搜索内容"
-    browser.fill(placeholder="请输入搜索内容", value=SEARCH_KEYWORD)
+    # 使用 CSS 属性选择器定位输入框
+    # 注意：需要直接调用 _run，因为 fill 方法会通过 _build_locator 转换
+    # 直接使用 CSS 选择器
+    browser._run("fill", '[placeholder="请输入搜索内容"]', SEARCH_KEYWORD, capture_output=False)
     browser.wait(500)
     print("  ✓ 关键词已输入")
     print()
