@@ -71,21 +71,28 @@ class AgentBrowser:
         self.viewport_width = viewport_width
         self.viewport_height = viewport_height
 
-        self._base_cmd = ["agent-browser", "--session-name", session_name]
-        if headless:
-            self._base_cmd.extend(["--headless"])
+        # 构建基础命令
+        # 格式: agent-browser [options] <command> [args]
+        self._base_cmd = ["agent-browser"]
+
+        # 添加会话选项
+        if session_name and session_name != "default":
+            self._base_cmd.extend(["--session", session_name])
+
+        # 无头模式：agent-browser 默认就是无头的，不需要额外参数
 
         self._last_snapshot: Optional[Dict] = None
         self._element_refs: Dict[str, str] = {}  # ref_id -> description
 
-    def _run(self, *args, input_data: Optional[str] = None, capture_output: bool = True) -> subprocess.CompletedProcess:
+    def _run(self, *args, input_data: Optional[str] = None, capture_output: bool = True, options: Optional[list] = None) -> subprocess.CompletedProcess:
         """
         执行 agent-browser 命令
 
         Args:
-            *args: 命令参数
+            *args: 命令和命令参数
             input_data: 标准输入数据
             capture_output: 是否捕获输出
+            options: 命令特定选项（在命令名称之后）
 
         Returns:
             subprocess.CompletedProcess 对象
@@ -93,7 +100,15 @@ class AgentBrowser:
         Raises:
             AgentBrowserError: 命令执行失败
         """
-        cmd = self._base_cmd + list(args)
+        # 构建完整命令: agent-browser [global-options] <command> [command-options] [args]
+        cmd = self._base_cmd.copy()
+
+        # 添加命令和参数
+        cmd.extend(args)
+
+        # 添加命令特定选项（在命令之后）
+        if options:
+            cmd.extend(options)
 
         try:
             result = subprocess.run(
@@ -145,17 +160,38 @@ class AgentBrowser:
                 ]
             }
         """
-        args = ["snapshot", "--json"]
+        # 命令特定选项
+        options = []
         if interactive_only:
-            args.append("-i")
+            options.append("-i")
+        options.append("--json")
 
-        result = self._run(*args)
-        snapshot = json.loads(result.stdout)
+        result = self._run("snapshot", options=options)
+        response = json.loads(result.stdout)
 
+        # agent-browser 返回格式: {"success": true, "data": {"refs": {...}, "snapshot": "..."}}
+        if not response.get("success"):
+            error = response.get("error", "Unknown error")
+            raise AgentBrowserError(f"Snapshot failed: {error}")
+
+        # 转换为标准格式
+        refs_dict = response.get("data", {}).get("refs", {})
+        elements = []
+
+        for ref_id, elem_data in refs_dict.items():
+            elements.append({
+                "ref": f"@{ref_id}",  # 添加 @ 前缀
+                "role": elem_data.get("role", ""),
+                "name": elem_data.get("name", ""),
+                "placeholder": elem_data.get("placeholder", ""),
+                "visible": True,  # agent-browser 默认只返回可见元素
+            })
+
+        snapshot = {"elements": elements}
         self._last_snapshot = snapshot
 
         # 更新元素引用映射
-        for elem in snapshot.get("elements", []):
+        for elem in elements:
             ref = elem.get("ref")
             if ref:
                 name = elem.get("name") or elem.get("placeholder") or elem.get("role")
@@ -177,7 +213,8 @@ class AgentBrowser:
             url: 目标 URL
             wait_until: 等待条件（load | domcontentloaded | networkidle）
         """
-        self._run("goto", url, "--wait-until", wait_until)
+        # agent-browser 使用 "open" 命令
+        self._run("open", url)
 
     def click(
         self,
@@ -226,6 +263,7 @@ class AgentBrowser:
             wait_ms: 填充后等待时间（毫秒）
         """
         locator = self._build_locator(ref=ref, placeholder=placeholder)
+        # agent-browser fill 命令: fill <selector> <text>
         self._run("fill", locator, value)
         if wait_ms > 0:
             time.sleep(wait_ms / 1000)
@@ -258,7 +296,8 @@ class AgentBrowser:
         Returns:
             页面 HTML 内容
         """
-        result = self._run("content")
+        # agent-browser 使用 eval 执行 JavaScript
+        result = self._run("eval", "document.documentElement.outerHTML")
         return result.stdout
 
     def screenshot(self, save_to: str, fullpage: bool = False) -> None:
@@ -269,12 +308,12 @@ class AgentBrowser:
             save_to: 保存路径（PNG 格式）
             fullpage: 是否全页截图
         """
-        args = ["screenshot", save_to]
+        options = []
         if fullpage:
-            args.append("--full-page")
+            options.append("--full")
 
         Path(save_to).parent.mkdir(parents=True, exist_ok=True)
-        self._run(*args)
+        self._run("screenshot", save_to, options=options)
 
     def close(self) -> None:
         """
