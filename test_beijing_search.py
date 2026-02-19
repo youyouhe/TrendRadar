@@ -47,7 +47,8 @@ try:
 
     # 输入搜索关键词
     print(f"步骤4: 输入搜索关键词 '{SEARCH_KEYWORD}'...")
-    browser.fill("@e1", SEARCH_KEYWORD)
+    # 使用语义化定位器：placeholder="请输入搜索内容"
+    browser.fill(placeholder="请输入搜索内容", value=SEARCH_KEYWORD)
     browser.wait(500)
     print("  ✓ 关键词已输入")
     print()
