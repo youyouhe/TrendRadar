@@ -14,14 +14,14 @@ from trendradar.crawler.agent_browser import AgentBrowser
 # 测试网站列表
 test_sites = [
     {
-        "name": "山东省公共资源交易平台",
-        "url": "http://ggzy.shandong.gov.cn/",
-        "备注": "原始地址"
+        "name": "山东省政府采购网",
+        "url": "http://www.ccgp-shandong.gov.cn/home",
+        "备注": "山东省政府采购官网"
     },
     {
-        "name": "山东省公共资源交易平台（新）",
-        "url": "https://ggzy.shandong.gov.cn/",
-        "备注": "尝试 HTTPS"
+        "name": "山东省公共资源交易平台",
+        "url": "http://ggzy.shandong.gov.cn/",
+        "备注": "旧地址（可能已失效）"
     },
     {
         "name": "中国政府采购网",

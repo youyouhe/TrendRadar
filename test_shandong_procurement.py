@@ -13,7 +13,8 @@ if str(project_root) not in sys.path:
 from trendradar.crawler.agent_browser import AgentBrowser
 
 print("=" * 60)
-print("山东省政府采购网站测试")
+print("山东省政府采购网测试")
+print("网址: http://www.ccgp-shandong.gov.cn/home")
 print("=" * 60)
 print()
 
@@ -28,9 +29,9 @@ try:
     print(f"  ✓ {browser}")
     print()
 
-    # 访问山东省公共资源交易平台
-    print("步骤2: 访问山东省公共资源交易平台...")
-    url = "http://ggzy.shandong.gov.cn/"
+    # 访问山东省政府采购网
+    print("步骤2: 访问山东省政府采购网...")
+    url = "http://www.ccgp-shandong.gov.cn/home"
     print(f"  URL: {url}")
     browser.goto(url)
     print("  ✓ 页面加载完成")
@@ -124,7 +125,7 @@ try:
     print()
 
     print("=" * 60)
-    print("✅ 山东省政府采购网站测试完成！")
+    print("✅ 山东省政府采购网测试完成！")
     print("=" * 60)
     print()
     print("下一步建议:")
