@@ -9,6 +9,7 @@ AgentBrowser 封装 - 使用 agent-browser CLI 进行浏览器自动化
 import json
 import subprocess
 import time
+import platform
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime
@@ -73,7 +74,9 @@ class AgentBrowser:
 
         # 构建基础命令
         # 格式: agent-browser [options] <command> [args]
-        self._base_cmd = ["agent-browser"]
+        # Windows 平台：npm 全局命令是 .cmd 批处理文件，需要显式指定后缀
+        agent_cmd = "agent-browser.cmd" if platform.system() == "Windows" else "agent-browser"
+        self._base_cmd = [agent_cmd]
 
         # 添加会话选项
         if session_name and session_name != "default":
