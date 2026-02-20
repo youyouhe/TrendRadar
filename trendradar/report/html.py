@@ -1133,14 +1133,16 @@ def render_html_content(
 
         platforms = data.get("platforms", [])
         rss_feeds = data.get("rss_feeds", [])
+        tenders = data.get("tenders", [])  # 新增：招标信息
 
-        if not platforms and not rss_feeds:
+        if not platforms and not rss_feeds and not tenders:
             return ""
 
         # 计算总条目数
         total_platform_items = sum(len(p.get("items", [])) for p in platforms)
         total_rss_items = sum(len(f.get("items", [])) for f in rss_feeds)
-        total_count = total_platform_items + total_rss_items
+        total_tender_items = len(tenders)
+        total_count = total_platform_items + total_rss_items + total_tender_items
 
         if total_count == 0:
             return ""
@@ -1297,6 +1299,102 @@ def render_html_content(
                     standalone_html += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
                 else:
                     standalone_html += escaped_title
+
+                standalone_html += """
+                                </div>
+                            </div>
+                        </div>"""
+
+            standalone_html += """
+                    </div>"""
+
+        # 渲染招标信息（新增）
+        if tenders:
+            standalone_html += f"""
+                    <div class="standalone-group">
+                        <div class="standalone-header">
+                            <div class="standalone-name">🏢 招标信息</div>
+                            <div class="standalone-count">{len(tenders)} 条</div>
+                        </div>"""
+
+            for j, tender in enumerate(tenders, 1):
+                title = tender.get("title", "")
+                url = tender.get("url", "")
+                source_name = tender.get("source_name", "")
+                budget = tender.get("amount") or tender.get("budget")
+                deadline = tender.get("deadline", "")
+                contact_person = tender.get("contact") or tender.get("contact_person")
+                contact_phone = tender.get("phone") or tender.get("contact_phone")
+                purchaser = tender.get("purchaser", "")
+                publish_date = tender.get("publish_date", "")
+
+                standalone_html += f"""
+                        <div class="news-item">
+                            <div class="news-number">{j}</div>
+                            <div class="news-content">
+                                <div class="news-header">"""
+
+                # 来源显示
+                if source_name:
+                    standalone_html += f'<span class="source-name">{html_escape(source_name)}</span>'
+
+                # 发布时间
+                if publish_date:
+                    if "T" in str(publish_date):
+                        try:
+                            from datetime import datetime as dt
+                            dt_obj = dt.fromisoformat(str(publish_date).replace("Z", "+00:00"))
+                            time_display = dt_obj.strftime("%m-%d")
+                        except:
+                            time_display = str(publish_date)[:10]
+                    else:
+                        time_display = str(publish_date)[:10]
+                    standalone_html += f'<span class="time-info">{html_escape(time_display)}</span>'
+
+                # 预算金额（高亮显示）
+                if budget:
+                    standalone_html += f'<span class="rank-num top">💰 {html_escape(str(budget))}万</span>'
+
+                # 截止日期
+                if deadline:
+                    deadline_str = str(deadline)
+                    if "T" in deadline_str:
+                        try:
+                            from datetime import datetime as dt
+                            dt_obj = dt.fromisoformat(deadline_str.replace("Z", "+00:00"))
+                            deadline_display = dt_obj.strftime("%m-%d %H:%M")
+                        except:
+                            deadline_display = deadline_str[:16]
+                    else:
+                        deadline_display = deadline_str[:16]
+                    standalone_html += f'<span class="count-info">⏰ {html_escape(deadline_display)}</span>'
+
+                standalone_html += """
+                                </div>
+                                <div class="news-title">"""
+
+                # 标题和链接
+                escaped_title = html_escape(title)
+                if url:
+                    escaped_url = html_escape(url)
+                    standalone_html += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
+                else:
+                    standalone_html += escaped_title
+
+                # 附加信息（采购人、联系方式）
+                meta_info = []
+                if purchaser:
+                    meta_info.append(f"采购人: {html_escape(purchaser)}")
+                if contact_person:
+                    meta_info.append(f"联系: {html_escape(contact_person)}")
+                if contact_phone:
+                    meta_info.append(f"📞 {html_escape(contact_phone)}")
+
+                if meta_info:
+                    standalone_html += f"""
+                                    <div class="news-meta" style="font-size: 12px; color: #666; margin-top: 4px;">
+                                        {html_escape(" | ".join(meta_info))}
+                                    </div>"""
 
                 standalone_html += """
                                 </div>

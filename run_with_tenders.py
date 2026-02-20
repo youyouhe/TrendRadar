@@ -92,18 +92,8 @@ def integrate_tenders_into_standalone(standalone_data, tenders, tender_config):
 
     tender_items = []
     for tender in tenders[:max_items]:
-        item = {
-            "title": tender.get('title', ''),
-            "url": tender.get('url', ''),
-            "budget": tender.get('budget', 'N/A'),
-            "publish_date": tender.get('publish_date', ''),
-            "deadline": tender.get('deadline', ''),
-            "contact_person": tender.get('contact_person', ''),
-            "contact_phone": tender.get('contact_phone', ''),
-            "purchaser": tender.get('purchaser', ''),
-            "source": tender.get('source', ''),
-        }
-        tender_items.append(item)
+        # 直接传递原始数据，HTML生成器会处理
+        tender_items.append(tender)
 
     standalone_data["tenders"] = tender_items
 
@@ -147,10 +137,6 @@ def run_with_tenders():
         tenders = collect_tenders(tender_config, frequency_words)
         print(f"[招标] 采集完成：{len(tenders)} 条")
 
-    # TODO: 整合到TrendRadar主流程
-    # 由于TrendRadar主程序结构复杂，需要修改 NewsAnalyzer 类
-    # 目前先单独保存招标数据，后续可以修改HTML报告生成器添加展示
-
     if tenders:
         # 保存到文件
         import json
@@ -165,10 +151,41 @@ def run_with_tenders():
 
         print(f"[招标] 数据已保存: {filename}")
 
+        # 将招标数据保存到环境变量，供TrendRadar使用
+        import os
+        os.environ['TRENDRADAR_TENDER_DATA'] = str(filename)
+        print(f"[招标] 数据路径已设置为环境变量")
+
     # 运行TrendRadar主程序
     print("\n正在运行TrendRadar主程序...")
     print("=" * 60)
     trendradar_main()
+
+    # 自动注入招标信息到HTML报告
+    if tenders:
+        print("\n" + "=" * 60)
+        print("正在注入招标信息到HTML报告...")
+        print("=" * 60)
+        try:
+            from inject_tenders_to_html import inject_tenders_to_html
+            from pathlib import Path
+
+            html_file = Path("output/html/latest/current.html")
+            if html_file.exists():
+                success = inject_tenders_to_html(html_file, tenders)
+                if success:
+                    print(f"[招标] ✅ 已自动注入到HTML报告")
+                else:
+                    print(f"[招标] ⚠️  注入失败，但不影响主流程")
+            else:
+                print(f"[招标] ⚠️  HTML报告不存在: {html_file}")
+        except Exception as e:
+            print(f"[招标] ⚠️  自动注入异常: {e}")
+            print(f"[招标] 您可以手动运行: python3 inject_tenders_to_html.py")
+
+    print("\n" + "=" * 60)
+    print("✅ 全部完成！")
+    print("=" * 60)
 
 
 if __name__ == "__main__":

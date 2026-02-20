@@ -161,53 +161,92 @@ HTML内容：
 
         return results
 
-    def get_detail(self, tender: TenderData) -> TenderData:
-        """获取招标详情"""
+    def get_detail(self, tender: TenderData, max_retries: int = 2) -> TenderData:
+        """
+        获取招标详情
+
+        Args:
+            tender: 招标基本信息
+            max_retries: 最大重试次数
+
+        Returns:
+            更新后的招标信息
+        """
         browser = None
+        last_error = None
 
-        try:
-            # 初始化浏览器
-            browser = AgentBrowser(
-                session_name=f"beijing_detail_{int(datetime.now().timestamp())}",
-                headless=True,
-                timeout=60000
-            )
+        for attempt in range(max_retries + 1):
+            try:
+                # 初始化浏览器
+                browser = AgentBrowser(
+                    session_name=f"beijing_detail_{int(datetime.now().timestamp())}",
+                    headless=True,
+                    timeout=30000  # 减少超时时间到30秒
+                )
 
-            # 访问详情页
-            browser.goto(tender.url)
-            browser.wait(3000)
+                # 访问详情页（带重试）
+                try:
+                    browser.goto(tender.url)
+                    browser.wait(2000)  # 减少等待时间
+                except Exception as goto_error:
+                    # goto失败，可能是网络问题或防爬
+                    if "ERR_CONNECTION_RESET" in str(goto_error):
+                        print(f"[{self.source_name}] 连接重置，可能被防爬限制")
+                        if attempt < max_retries:
+                            print(f"[{self.source_name}] 等待5秒后重试... ({attempt + 1}/{max_retries})")
+                            import time
+                            time.sleep(5)
+                            continue
+                    raise goto_error
 
-            # 获取详情页HTML
-            detail_html = browser.get_content()
+                # 获取详情页HTML
+                detail_html = browser.get_content()
 
-            # 使用DeepSeek解析详情
-            detail = self._parse_with_deepseek(detail_html, is_list=False)
+                # 检查是否真的加载了内容
+                if not detail_html or len(detail_html) < 100:
+                    raise Exception("详情页内容为空或过短")
 
-            if detail:
-                # 更新字段
-                tender.amount = detail.get('budget')
-                tender.contact = detail.get('contact_person')
-                tender.phone = detail.get('contact_phone')
-                tender.purchaser = detail.get('purchaser')
+                # 使用DeepSeek解析详情
+                detail = self._parse_with_deepseek(detail_html, is_list=False)
 
-                # 解析日期
-                if detail.get('publish_date'):
+                if detail:
+                    # 更新字段
+                    tender.amount = detail.get('budget')
+                    tender.contact = detail.get('contact_person')
+                    tender.phone = detail.get('contact_phone')
+                    tender.purchaser = detail.get('purchaser')
+
+                    # 解析日期
+                    if detail.get('publish_date'):
+                        try:
+                            tender.publish_date = datetime.fromisoformat(detail['publish_date'])
+                        except:
+                            pass
+
+                    if detail.get('deadline'):
+                        try:
+                            tender.deadline = datetime.fromisoformat(detail['deadline'])
+                        except:
+                            pass
+
+                # 成功获取，跳出重试循环
+                break
+
+            except Exception as e:
+                last_error = e
+                if attempt < max_retries:
+                    print(f"[{self.source_name}] 获取详情失败 (尝试 {attempt + 1}/{max_retries + 1}): {e}")
+                    import time
+                    time.sleep(3)  # 重试前等待
+                else:
+                    print(f"[{self.source_name}] 获取详情失败（已重试{max_retries}次）: {e}")
+
+            finally:
+                if browser:
                     try:
-                        tender.publish_date = datetime.fromisoformat(detail['publish_date'])
+                        browser.close()
                     except:
                         pass
-
-                if detail.get('deadline'):
-                    try:
-                        tender.deadline = datetime.fromisoformat(detail['deadline'])
-                    except:
-                        pass
-
-        except Exception as e:
-            print(f"[{self.source_name}] 获取详情失败: {e}")
-
-        finally:
-            if browser:
-                browser.close()
+                browser = None
 
         return tender

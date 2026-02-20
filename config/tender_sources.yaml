@@ -6,19 +6,177 @@ TENDER_ENABLED: true
 
 # 采集源列表
 TENDER_SOURCES:
+  # 国家级平台
+  - id: china
+    name: 中国政府采购网
+    url: http://www.ccgp.gov.cn/
+    enabled: false
+
+  - id: national_ggzy
+    name: 全国公共资源交易平台
+    url: http://ggzy.gov.cn/
+    enabled: false
+
+  # 华北地区
   - id: beijing
     name: 北京市政府采购网
     url: http://www.ccgp-beijing.gov.cn/
     enabled: true
 
-  - id: guangdong
-    name: 广东省政府采购网
-    url: https://gdgpo.czt.gd.gov.cn
+  - id: tianjin
+    name: 天津市政府采购网
+    url: http://www.ccgp-tianjin.gov.cn/
+    enabled: false
+
+  - id: hebei
+    name: 河北省政府采购网
+    url: http://www.ccgp-hebei.gov.cn/
+    enabled: false
+
+  - id: shanxi
+    name: 山西省政府采购网
+    url: http://www.ccgp-shanxi.gov.cn/
+    enabled: false
+
+  - id: neimenggu
+    name: 内蒙古政府采购网
+    url: http://www.ccgp-neimenggu.gov.cn/
+    enabled: false
+
+  # 东北地区
+  - id: liaoning
+    name: 辽宁省政府采购网
+    url: http://www.ccgp-liaoning.gov.cn/
+    enabled: false
+
+  - id: jilin
+    name: 吉林省政府采购网
+    url: http://www.ccgp-jilin.gov.cn/
+    enabled: false
+
+  - id: heilongjiang
+    name: 黑龙江省政府采购网
+    url: http://www.ccgp-heilongjiang.gov.cn/
+    enabled: false
+
+  # 华东地区
+  - id: shanghai
+    name: 上海市政府采购网
+    url: http://www.ccgp-shanghai.gov.cn/
+    enabled: false
+
+  - id: jiangsu
+    name: 江苏省政府采购网
+    url: http://www.ccgp-jiangsu.gov.cn/
+    enabled: false
+
+  - id: zhejiang
+    name: 浙江政府采购网
+    url: http://www.ccgp-zhejiang.gov.cn/
+    enabled: false
+
+  - id: anhui
+    name: 安徽省政府采购网
+    url: http://www.ccgp-anhui.gov.cn/
+    enabled: false
+
+  - id: fujian
+    name: 福建省政府采购网
+    url: http://www.ccgp-fujian.gov.cn/
+    enabled: false
+
+  - id: jiangxi
+    name: 江西省政府采购网
+    url: http://www.ccgp-jiangxi.gov.cn/
     enabled: false
 
   - id: shandong
     name: 山东省政府采购网
-    url: https://www.ccgp-shandong.gov.cn
+    url: http://www.ccgp-shandong.gov.cn/
+    enabled: false
+
+  # 华中地区
+  - id: henan
+    name: 河南省政府采购网
+    url: http://www.ccgp-henan.gov.cn/
+    enabled: false
+
+  - id: hubei
+    name: 湖北省政府采购网
+    url: http://www.ccgp-hubei.gov.cn/
+    enabled: false
+
+  - id: hunan
+    name: 湖南省政府采购网
+    url: http://www.ccgp-hunan.gov.cn/
+    enabled: false
+
+  # 华南地区
+  - id: guangdong
+    name: 广东省政府采购网
+    url: https://gdgpo.czt.gd.gov.cn/
+    enabled: false
+
+  - id: guangxi
+    name: 广西政府采购网
+    url: http://www.ccgp-guangxi.gov.cn/
+    enabled: false
+
+  - id: hainan
+    name: 海南省政府采购网
+    url: http://www.ccgp-hainan.gov.cn/
+    enabled: false
+
+  # 西南地区
+  - id: chongqing
+    name: 重庆市政府采购网
+    url: http://www.ccgp-chongqing.gov.cn/
+    enabled: false
+
+  - id: sichuan
+    name: 四川政府采购网
+    url: http://www.ccgp-sichuan.gov.cn/
+    enabled: false
+
+  - id: guizhou
+    name: 贵州省政府采购网
+    url: http://www.ccgp-guizhou.gov.cn/
+    enabled: false
+
+  - id: yunnan
+    name: 云南省政府采购网
+    url: http://www.ccgp-yunnan.gov.cn/
+    enabled: false
+
+  - id: xizang
+    name: 西藏自治区政府采购网
+    url: http://www.ccgp-xizang.gov.cn/
+    enabled: false
+
+  # 西北地区
+  - id: shaanxi
+    name: 陕西省政府采购网
+    url: http://www.ccgp-shaanxi.gov.cn/
+    enabled: false
+
+  - id: gansu
+    name: 甘肃省政府采购网
+    url: http://www.ccgp-gansu.gov.cn/
+    enabled: false
+
+  - id: qinghai
+    name: 青海省政府采购网
+    url: http://www.ccgp-qinghai.gov.cn/
+    enabled: false
+
+  - id: ningxia
+    name: 宁夏政府采购网
+    url: http://www.ccgp-ningxia.gov.cn/
+    enabled: false
+
+  - id: xinjiang
+    name: 新疆政府采购网
+    url: http://www.ccgp-xinjiang.gov.cn/
     enabled: false
 
 # 采集设置

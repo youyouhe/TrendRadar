@@ -95,12 +95,18 @@ if Path(STATIC_DIR).exists():
 
 
 # 注册API路由
-from api import tenders, collect, sources, tags
+try:
+    from api import tenders, collect, sources, tags
+    app.include_router(tenders.router)
+    app.include_router(collect.router)
+    app.include_router(sources.router)
+    app.include_router(tags.router)
+except ImportError as e:
+    print(f"警告: 部分API模块未找到: {e}")
 
-app.include_router(tenders.router)
-app.include_router(collect.router)
-app.include_router(sources.router)
-app.include_router(tags.router)
+# 注册招标推送API（Windows客户端推送）
+from api import tender_push
+app.include_router(tender_push.router)
 
 
 if __name__ == "__main__":
