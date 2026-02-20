@@ -1,0 +1,54 @@
+# 招标信息采集源配置
+# 整合到TrendRadar框架中，作为独立展示区显示
+
+# 是否启用招标采集
+TENDER_ENABLED: true
+
+# 采集源列表
+TENDER_SOURCES:
+  - id: beijing
+    name: 北京市政府采购网
+    url: http://www.ccgp-beijing.gov.cn/
+    enabled: true
+
+  - id: guangdong
+    name: 广东省政府采购网
+    url: https://gdgpo.czt.gd.gov.cn
+    enabled: false
+
+  - id: shandong
+    name: 山东省政府采购网
+    url: https://www.ccgp-shandong.gov.cn
+    enabled: false
+
+# 采集设置
+TENDER_SETTINGS:
+  # 每个源最多采集数量
+  MAX_ITEMS_PER_SOURCE: 10
+
+  # 是否使用关键词过滤（使用 frequency_words.txt）
+  USE_KEYWORD_FILTER: true
+
+  # 是否包含在AI分析中
+  INCLUDE_IN_AI_ANALYSIS: true
+
+  # 采集间隔（毫秒）
+  REQUEST_INTERVAL: 2000
+
+# 展示设置
+TENDER_DISPLAY:
+  # 在HTML报告中显示的标题
+  SECTION_TITLE: 招标信息
+
+  # 最多显示数量
+  MAX_DISPLAY_ITEMS: 20
+
+  # 显示字段
+  SHOW_FIELDS:
+    - title         # 标题
+    - budget        # 预算
+    - publish_date  # 发布日期
+    - deadline      # 截止日期
+    - contact_person # 联系人
+    - contact_phone  # 联系电话
+    - purchaser     # 采购人
