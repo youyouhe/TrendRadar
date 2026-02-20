@@ -149,11 +149,20 @@ async def list_reports(
         date_str = parts[-2] if len(parts) > 1 and parts[-2] != "html" else "unknown"
         time_str = html_file.stem
 
+        # 安全处理文件路径
+        try:
+            # 尝试获取相对于当前目录的路径
+            rel_path = html_file.relative_to(Path.cwd())
+            file_path_str = str(rel_path)
+        except ValueError:
+            # 如果失败，使用绝对路径
+            file_path_str = str(html_file.absolute())
+
         html_files.append(ReportInfo(
             filename=html_file.name,
             date=date_str,
             time=time_str,
-            file_path=str(html_file.relative_to(Path.cwd())),
+            file_path=file_path_str,
             size=stat.st_size,
             created_at=created_time.isoformat()
         ))

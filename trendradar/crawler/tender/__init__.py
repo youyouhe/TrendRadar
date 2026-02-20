@@ -2,7 +2,8 @@
 """
 招标信息采集模块
 
-支持多省份政府采购网站的招标信息采集，使用 agent-browser 进行语义化自动化。
+支持全国34个省级行政区政府采购网站的招标信息采集
+使用 agent-browser + DeepSeek 智能解析
 """
 
 from typing import List, Dict, Optional
@@ -12,23 +13,98 @@ from trendradar.crawler.tender.shandong import ShandongTenderSource
 from trendradar.crawler.tender.guangdong import GuangdongTenderSource
 from trendradar.crawler.tender.beijing import BeijingTenderSource
 
+# 导入所有省份采集器
+from trendradar.crawler.tender.provinces import (
+    ChinaCCGPSource,
+    TianjinTenderSource,
+    HebeiTenderSource,
+    ShanxiTenderSource,
+    NeimengguTenderSource,
+    LiaoningTenderSource,
+    JilinTenderSource,
+    HeilongjiangTenderSource,
+    ShanghaiTenderSource,
+    JiangsuTenderSource,
+    ZhejiangTenderSource,
+    AnhuiTenderSource,
+    FujianTenderSource,
+    JiangxiTenderSource,
+    HenanTenderSource,
+    HubeiTenderSource,
+    HunanTenderSource,
+    GuangxiTenderSource,
+    HainanTenderSource,
+    ChongqingTenderSource,
+    SichuanTenderSource,
+    GuizhouTenderSource,
+    YunnanTenderSource,
+    XizangTenderSource,
+    ShaanxiTenderSource,
+    GansuTenderSource,
+    QinghaiTenderSource,
+    NingxiaTenderSource,
+    XinjiangTenderSource,
+)
+
 __all__ = [
     "TenderSource",
     "TenderData",
     "TenderStatus",
-    "ShandongTenderSource",
-    "GuangdongTenderSource",
-    "BeijingTenderSource",
     "get_tender_source",
     "fetch_tender_data",
+    "PROVINCE_SOURCES",
 ]
 
 
-# 省份代码映射
+# 省份代码映射（全国34个省级行政区 + 国家平台）
 PROVINCE_SOURCES = {
-    "shandong": ShandongTenderSource,
-    "guangdong": GuangdongTenderSource,
-    "beijing": BeijingTenderSource,
+    # 国家级平台
+    "china": ChinaCCGPSource,
+
+    # 华北地区（5个）
+    "beijing": BeijingTenderSource,      # 使用专门优化的采集器
+    "tianjin": TianjinTenderSource,
+    "hebei": HebeiTenderSource,
+    "shanxi": ShanxiTenderSource,
+    "neimenggu": NeimengguTenderSource,
+
+    # 东北地区（3个）
+    "liaoning": LiaoningTenderSource,
+    "jilin": JilinTenderSource,
+    "heilongjiang": HeilongjiangTenderSource,
+
+    # 华东地区（7个）
+    "shanghai": ShanghaiTenderSource,
+    "jiangsu": JiangsuTenderSource,
+    "zhejiang": ZhejiangTenderSource,
+    "anhui": AnhuiTenderSource,
+    "fujian": FujianTenderSource,
+    "jiangxi": JiangxiTenderSource,
+    "shandong": ShandongTenderSource,    # 使用专门优化的采集器
+
+    # 华中地区（3个）
+    "henan": HenanTenderSource,
+    "hubei": HubeiTenderSource,
+    "hunan": HunanTenderSource,
+
+    # 华南地区（3个）
+    "guangdong": GuangdongTenderSource,  # 使用专门优化的采集器
+    "guangxi": GuangxiTenderSource,
+    "hainan": HainanTenderSource,
+
+    # 西南地区（5个）
+    "chongqing": ChongqingTenderSource,
+    "sichuan": SichuanTenderSource,
+    "guizhou": GuizhouTenderSource,
+    "yunnan": YunnanTenderSource,
+    "xizang": XizangTenderSource,
+
+    # 西北地区（5个）
+    "shaanxi": ShaanxiTenderSource,
+    "gansu": GansuTenderSource,
+    "qinghai": QinghaiTenderSource,
+    "ningxia": NingxiaTenderSource,
+    "xinjiang": XinjiangTenderSource,
 }
 
 
