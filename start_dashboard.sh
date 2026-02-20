@@ -39,8 +39,22 @@ echo "=========================================="
 echo "启动服务..."
 echo "=========================================="
 echo ""
-echo "🌐 Dashboard地址: http://localhost:$PORT"
-echo "📚 API文档: http://localhost:$PORT/docs"
+
+# 获取局域网IP
+LOCAL_IP=$(ip addr show | grep "inet " | grep -v "127.0.0.1" | grep -v "docker" | grep -v "br-" | head -1 | awk '{print $2}' | cut -d'/' -f1)
+
+echo "🌐 Dashboard访问地址:"
+echo "   本机: http://localhost:$PORT"
+if [ ! -z "$LOCAL_IP" ]; then
+    echo "   局域网: http://$LOCAL_IP:$PORT"
+fi
+echo ""
+echo "📚 API文档:"
+echo "   http://localhost:$PORT/docs"
+if [ ! -z "$LOCAL_IP" ]; then
+    echo "   http://$LOCAL_IP:$PORT/docs"
+fi
+echo ""
 echo "🔧 健康检查: http://localhost:$PORT/api/health"
 echo ""
 echo "功能说明:"
@@ -48,6 +62,8 @@ echo "  • 📊 Dashboard总览 - 查看最新报告和统计数据"
 echo "  • 📄 报告历史 - 浏览所有历史报告"
 echo "  • 🏢 招标信息 - 搜索和查看招标项目"
 echo "  • 📤 推送接收 - 接收Windows客户端推送的数据"
+echo ""
+echo "Windows客户端推送地址: http://$LOCAL_IP:$PORT"
 echo ""
 echo "按 Ctrl+C 停止服务"
 echo ""

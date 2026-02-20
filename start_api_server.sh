@@ -49,10 +49,26 @@ echo "=========================================="
 echo "启动服务..."
 echo "=========================================="
 echo ""
-echo "API地址: http://0.0.0.0:$PORT"
-echo "API文档: http://localhost:$PORT/docs"
-echo "健康检查: http://localhost:$PORT/api/health"
-echo "推送端点: http://localhost:$PORT/api/tenders/push"
+
+# 获取局域网IP
+LOCAL_IP=$(ip addr show | grep "inet " | grep -v "127.0.0.1" | grep -v "docker" | grep -v "br-" | head -1 | awk '{print $2}' | cut -d'/' -f1)
+
+echo "🌐 服务地址:"
+echo "   监听地址: 0.0.0.0:$PORT (所有网络接口)"
+echo "   本机访问: http://localhost:$PORT"
+if [ ! -z "$LOCAL_IP" ]; then
+    echo "   局域网访问: http://$LOCAL_IP:$PORT"
+fi
+echo ""
+echo "📚 API文档: http://localhost:$PORT/docs"
+echo "🔧 健康检查: http://localhost:$PORT/api/health"
+echo ""
+echo "📤 Windows客户端推送地址:"
+if [ ! -z "$LOCAL_IP" ]; then
+    echo "   http://$LOCAL_IP:$PORT/api/tenders/push"
+else
+    echo "   http://localhost:$PORT/api/tenders/push"
+fi
 echo ""
 echo "按 Ctrl+C 停止服务"
 echo ""
