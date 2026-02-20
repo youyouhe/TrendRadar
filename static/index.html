@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>招标信息监控系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        .header { background: white; padding: 20px 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { color: #667eea; font-size: 24px; }
+        .nav-tabs { display: flex; gap: 10px; }
+        .nav-tab { padding: 10px 20px; border: none; background: #f0f0f0; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .nav-tab.active { background: #667eea; color: white; }
+        
+        .panel { display: none; }
+        .panel.active { display: block; }
+        
+        .controls { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; }
+        .form-group { flex: 1; min-width: 150px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #333; font-weight: 600; font-size: 13px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
+        
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-success { background: #48bb78; color: white; }
+        .btn-success:hover { background: #38a169; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+        
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
+        .stat-label { color: #999; font-size: 13px; margin-bottom: 5px; }
+        .stat-value { color: #333; font-size: 28px; font-weight: bold; }
+        
+        .results { background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
+        .results-header { padding: 15px 20px; background: #f8f9fa; border-bottom: 2px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+        .results-title { font-size: 16px; font-weight: 600; color: #333; }
+        
+        .tender-list { max-height: 600px; overflow-y: auto; }
+        .tender-item { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; }
+        .tender-item:hover { background: #f8f9fa; }
+        .tender-item.expired { border: 2px solid #f56565; border-radius: 8px; margin: 10px; }
+        
+        .tender-title { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 8px; line-height: 1.4; }
+        .tender-meta { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 8px; font-size: 12px; color: #666; }
+        
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+        .badge-province { background: #e0e7ff; color: #667eea; }
+        .badge-industry { background: #fef3c7; color: #d97706; }
+        .badge-soe { background: #d1fae5; color: #059669; }
+        
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 5px; color: white; cursor: pointer; }
+        .tender-note { background: #fffbeb; padding: 8px 12px; border-radius: 6px; font-size: 12px; color: #92400e; margin-top: 8px; border-left: 3px solid #f59e0b; }
+        
+        .tender-actions { display: flex; gap: 8px; margin-top: 10px; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-header { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+        .modal-footer { margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; }
+        
+        textarea { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; min-height: 80px; }
+        
+        .trace-upload { border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 10px; cursor: pointer; }
+        .trace-upload:hover { border-color: #667eea; background: #f8f9fa; }
+        
+        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+        
+        .source-list, .trace-list { background: white; border-radius: 15px; padding: 20px; }
+        .source-item, .trace-item { padding: 15px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+        .source-item:last-child, .trace-item:last-child { border-bottom: none; }
+        
+        .toast { position: fixed; top: 20px; right: 20px; background: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: none; z-index: 2000; }
+        .toast.show { display: block; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast-success { border-left: 4px solid #48bb78; }
+        .toast-error { border-left: 4px solid #f56565; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>招标信息监控系统</h1>
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-panel="tenders">招标列表</button>
+                <button class="nav-tab" data-panel="tasks">采集任务</button>
+                <button class="nav-tab" data-panel="sources">采集源</button>
+                <button class="nav-tab" data-panel="traces">轨迹管理</button>
+            </div>
+        </div>
+
+        <!-- 招标列表面板 -->
+        <div id="tenders-panel" class="panel active">
+            <div class="controls">
+                <div class="form-group">
+                    <label>源头分类</label>
+                    <select id="filterCategory" onchange="loadSourcesForFilter()">
+                        <option value="">全部</option>
+                        <option value="province">省政府</option>
+                        <option value="industry">行业</option>
+                        <option value="soe">央国企</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>采集源头</label>
+                    <select id="filterSource">
+                        <option value="">全部源头</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>状态</label>
+                    <select id="filterStatus">
+                        <option value="">全部</option>
+                        <option value="active">进行中</option>
+                        <option value="expired">已过期</option>
+                        <option value="closed">已关闭</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1.5;">
+                    <label>关键词搜索</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="filterKeyword" placeholder="多个关键词用空格或逗号分隔" style="flex: 1;">
+                        <select id="filterMatchMode" style="width: 120px;">
+                            <option value="any" selected>任意匹配</option>
+                            <option value="all">全部匹配</option>
+                            <option value="exact">精确匹配</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>日期范围</label>
+                    <input type="date" id="filterDateFrom"> - <input type="date" id="filterDateTo">
+                </div>
+                <button class="btn btn-primary" onclick="loadTenders()">查询</button>
+                <button class="btn btn-success" onclick="startCollect()">采集</button>
+                <div style="position: relative;">
+                    <button class="btn" style="background:#f59e0b;color:white;" onclick="toggleExportMenu()">📥 导出</button>
+                    <div id="exportMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:5px;background:white;border:2px solid #e0e0e0;border-radius:8px;box-shadow:0 5px 15px rgba(0,0,0,0.2);min-width:120px;z-index:100;">
+                        <button class="btn" style="width:100%;text-align:left;background:white;color:#333;border:none;border-radius:8px 8px 0 0;" onclick="exportData('csv')">导出CSV</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card"><div class="stat-label">总项目数</div><div class="stat-value" id="totalCount">0</div></div>
+                <div class="stat-card"><div class="stat-label">进行中</div><div class="stat-value" id="activeCount">0</div></div>
+                <div class="stat-card"><div class="stat-label">已过期</div><div class="stat-value" id="expiredCount">0</div></div>
+                <div class="stat-card"><div class="stat-label">采集源</div><div class="stat-value" id="sourceCount">0</div></div>
+            </div>
+
+            <div class="results">
+                <div class="results-header">
+                    <span class="results-title">招标项目列表</span>
+                    <span id="resultCount">共 0 条</span>
+                </div>
+                <div class="pagination-controls" style="padding: 15px 20px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span style="font-size: 13px; color: #666;">每页显示</span>
+                        <select id="pageSizeSelect" onchange="changePageSize()" style="padding: 5px 10px; border: 2px solid #e0e0e0; border-radius: 6px;">
+                            <option value="10">10 条</option>
+                            <option value="20" selected>20 条</option>
+                            <option value="50">50 条</option>
+                            <option value="100">100 条</option>
+                        </select>
+                    </div>
+                    <div id="paginationButtons"></div>
+                    <div style="font-size: 13px; color: #666;">
+                        第 <span id="currentPageDisplay">1</span> / <span id="totalPagesDisplay">1</span> 页
+                    </div>
+                </div>
+                <div class="tender-list" id="tenderList">
+                    <div class="empty-state">暂无数据</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 采集任务面板 -->
+        <div id="tasks-panel" class="panel">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadCollectTasks()">🔄 刷新</button>
+            </div>
+            <div class="source-list" id="taskList">
+                <div class="empty-state">加载中...</div>
+            </div>
+        </div>
+
+        <!-- 采集源面板 -->
+        <div id="sources-panel" class="panel">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="showAddSource()">+ 添加采集源</button>
+            </div>
+            <div class="source-list" id="sourceList">
+                <div class="empty-state">加载中...</div>
+            </div>
+        </div>
+
+        <!-- 轨迹管理面板 -->
+        <div id="traces-panel" class="panel">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="showUploadTrace()">+ 上传轨迹</button>
+            </div>
+            <div class="trace-list" id="traceList">
+                <div class="empty-state">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加采集源弹窗 -->
+    <div id="sourceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">添加采集源</div>
+            <div class="form-group">
+                <label>名称</label>
+                <input type="text" id="sourceName" placeholder="如：广东省政府采购网">
+            </div>
+            <div class="form-group">
+                <label>代码</label>
+                <input type="text" id="sourceCode" placeholder="如：guangdong">
+            </div>
+            <div class="form-group">
+                <label>分类</label>
+                <select id="sourceCategory">
+                    <option value="province">省政府</option>
+                    <option value="industry">行业</option>
+                    <option value="soe">央国企</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>基础URL</label>
+                <input type="text" id="sourceBaseURL" placeholder="https://...">
+            </div>
+            <div class="form-group">
+                <label>描述</label>
+                <textarea id="sourceDesc"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('sourceModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveSource()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上传轨迹弹窗 -->
+    <div id="traceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">上传轨迹脚本</div>
+            <div class="trace-upload" onclick="document.getElementById('traceFile').click()">
+                <p>点击选择JSON文件或拖拽到此处</p>
+                <input type="file" id="traceFile" accept=".json" style="display:none" onchange="handleTraceFile(this)">
+            </div>
+            <textarea id="traceContent" placeholder="或粘贴JSON内容" style="margin-top:15px;height:150px;"></textarea>
+            <div id="traceAnalysis" style="margin-top:15px;padding:10px;background:#f0f9ff;border-radius:8px;display:none;">
+                <p><strong>分析结果：</strong></p>
+                <p>URL: <span id="analyzedUrl"></span></p>
+                <p>类型: <span id="analyzedType"></span></p>
+            </div>
+            <div class="form-group" style="margin-top:15px;">
+                <label>绑定采集源</label>
+                <select id="traceSource"></select>
+            </div>
+            <div class="form-group">
+                <label>轨迹名称</label>
+                <input type="text" id="traceName" placeholder="如：广东省列表采集">
+            </div>
+            <div class="form-group">
+                <label>轨迹类型</label>
+                <select id="traceType">
+                    <option value="list">列表页</option>
+                    <option value="detail">详情页</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('traceModal')">取消</button>
+                <button class="btn btn-primary" onclick="analyzeTrace()">分析</button>
+                <button class="btn btn-success" onclick="saveTrace()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑标签弹窗 -->
+    <div id="tagModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">编辑招标信息</div>
+            <div class="form-group">
+                <label>标签</label>
+                <div id="tagCheckboxes" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+            </div>
+            <div class="form-group">
+                <label>备注</label>
+                <textarea id="tenderNote" placeholder="填写您的看法和备注"></textarea>
+            </div>
+            <input type="hidden" id="editTenderId">
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('tagModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveTenderEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"><span id="toastMessage"></span></div>
+
+    <script>
+        let sources = [];
+        let tags = [];
+        let tenders = [];
+        let traces = [];  // 添加轨迹列表缓存
+        let currentPage = 1;
+        let currentPageSize = 20;
+        let totalPages = 1;
+
+        // 导航切换
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.panel + '-panel').classList.add('active');
+                
+                if(tab.dataset.panel === 'tasks') loadCollectTasks();
+                if(tab.dataset.panel === 'sources') loadSources();
+                if(tab.dataset.panel === 'traces') loadTraces();
+            });
+        });
+
+        // 加载采集源列表
+        async function loadSources() {
+            try {
+                const res = await fetch('/api/sources');
+                const data = await res.json();
+                if(data.success) {
+                    sources = data.data;
+                    renderSources();
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function renderSources() {
+            const html = sources.map(s => `
+                <div class="source-item">
+                    <div>
+                        <strong>${s.name}</strong>
+                        <span class="badge badge-${s.category}">${s.category === 'province' ? '省政府' : s.category === 'industry' ? '行业' : '央国企'}</span>
+                        <div style="font-size:12px;color:#666;margin-top:5px;">${s.base_url || ''}</div>
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="deleteSource(${s.id})">删除</button>
+                </div>
+            `).join('');
+            document.getElementById('sourceList').innerHTML = html || '<div class="empty-state">暂无采集源</div>';
+            document.getElementById('sourceCount').textContent = sources.length;
+        }
+
+        // 加载轨迹列表
+        async function loadTraces() {
+            try {
+                const res = await fetch('/api/traces');
+                const data = await res.json();
+                if(data.success && data.data) {
+                    const traces = data.data;
+                    const html = traces.map(t => `
+                        <div class="trace-item">
+                            <div>
+                                <strong>${t.name}</strong> (${t.type})
+                                <div style="font-size:12px;color:#666;">${t.parsed_url || ''}</div>
+                            </div>
+                            <div>
+                                <span class="badge badge-primary">${t.status}</span>
+                                <button class="btn btn-sm" style="margin-left:8px;color:#dc3545;border:1px solid #dc3545;padding:2px 8px;" onclick="deleteTrace(${t.id})">删除</button>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('traceList').innerHTML = html || '<div class="empty-state">暂无轨迹</div>';
+                } else {
+                    document.getElementById('traceList').innerHTML = '<div class="empty-state">暂无轨迹</div>';
+                }
+            } catch(e) { console.error(e); document.getElementById('traceList').innerHTML = '<div class="empty-state">加载失败</div>'; }
+        }
+
+        async function deleteTrace(id) {
+            if(!confirm('确定删除这条轨迹?')) return;
+            try {
+                await fetch(`/api/traces?id=${id}`, {method: 'DELETE'});
+                showToast('删除成功', 'success');
+                loadTraces();
+            } catch(e) { showToast('删除失败', 'error'); }
+        }
+
+        // 加载采集任务列表
+        async function loadCollectTasks() {
+            try {
+                const res = await fetch('/api/collect/tasks?limit=50');
+                const data = await res.json();
+                if(data.success && data.data) {
+                    const tasks = data.data;
+                    const html = tasks.map(task => {
+                        const statusColors = {
+                            'pending': '#fbbf24',
+                            'running': '#3b82f6',
+                            'completed': '#10b981',
+                            'failed': '#ef4444',
+                            'cancelled': '#6b7280'
+                        };
+                        const statusTexts = {
+                            'pending': '等待中',
+                            'running': '运行中',
+                            'completed': '已完成',
+                            'failed': '失败',
+                            'cancelled': '已取消'
+                        };
+                        const keywords = JSON.parse(task.keywords || '[]');
+                        const createdAt = new Date(task.created_at).toLocaleString('zh-CN');
+
+                        return `
+                        <div class="trace-item">
+                            <div style="flex:1;">
+                                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                                    <strong>${task.source_name}</strong>
+                                    <span class="badge" style="background:${statusColors[task.status]};color:white;">${statusTexts[task.status]}</span>
+                                </div>
+                                <div style="font-size:12px;color:#666;margin-bottom:5px;">
+                                    关键词: ${keywords.join(', ')}
+                                </div>
+                                <div style="font-size:12px;color:#666;">
+                                    ${task.message} | 进度: ${task.progress}% | 发现: ${task.found} 条 | 保存: ${task.saved} 条
+                                </div>
+                                <div style="font-size:11px;color:#999;margin-top:5px;">
+                                    创建时间: ${createdAt}
+                                </div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+                                ${task.status === 'running' ?
+                                    `<button class="btn btn-sm" style="background:#ef4444;color:white;min-width:80px;" onclick="cancelTask('${task.id}')">取消任务</button>
+                                    <div style="width:50px;height:50px;border:3px solid #3b82f6;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                                    <style>@keyframes spin { to { transform: rotate(360deg); }}</style>` : ''
+                                }
+                            </div>
+                        </div>`;
+                    }).join('');
+                    document.getElementById('taskList').innerHTML = html || '<div class="empty-state">暂无任务</div>';
+
+                    // 如果有运行中的任务，3秒后自动刷新
+                    if(tasks.some(t => t.status === 'running')) {
+                        setTimeout(loadCollectTasks, 3000);
+                    }
+                } else {
+                    document.getElementById('taskList').innerHTML = '<div class="empty-state">暂无任务</div>';
+                }
+            } catch(e) {
+                console.error(e);
+                document.getElementById('taskList').innerHTML = '<div class="empty-state">加载失败</div>';
+            }
+        }
+
+        // 加载标签
+        async function loadTags() {
+            try {
+                const res = await fetch('/api/tags');
+                const data = await res.json();
+                if(data.success) tags = data.data;
+            } catch(e) { console.error(e); }
+        }
+
+        // 加载招标列表
+        async function loadTenders(page = 1) {
+            currentPage = page;
+            const params = new URLSearchParams();
+            const category = document.getElementById('filterCategory').value;
+            const source = document.getElementById('filterSource').value;
+            const status = document.getElementById('filterStatus').value;
+            const keyword = document.getElementById('filterKeyword').value;
+            const matchMode = document.getElementById('filterMatchMode').value;
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+
+            if(category) params.append('category', category);
+            if(source) params.append('source_id', source);
+            if(status) params.append('status', status);
+            if(keyword) params.append('keyword', keyword);
+            if(matchMode) params.append('match_mode', matchMode);
+            if(dateFrom) params.append('date_from', dateFrom);
+            if(dateTo) params.append('date_to', dateTo);
+            params.append('page', page);
+            params.append('limit', currentPageSize);
+
+            try {
+                const res = await fetch(`/api/tenders?${params}`);
+                if (!res.ok) {
+                    console.error('HTTP error:', res.status, await res.text());
+                    showToast('请求失败: ' + res.status, 'error');
+                    return;
+                }
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch(parseErr) {
+                    console.error('JSON parse error:', parseErr, 'Response:', text.substring(0, 500));
+                    showToast('数据解析失败', 'error');
+                    return;
+                }
+                if(data.success) {
+                    const list = data.data || [];
+                    tenders = list;
+                    totalPages = data.total_pages || 1;
+                    displayTenders(list, data.total);
+                    updateStats(list);
+                    updatePaginationUI(data.page || 1, data.total_pages || 1, data.total || 0);
+                }
+            } catch(e) { console.error(e); showToast('加载失败: ' + e.message, 'error'); }
+        }
+
+        function displayTenders(list, total) {
+            const displayTotal = total !== undefined ? total : list.length;
+            document.getElementById('resultCount').textContent = `共 ${displayTotal} 条`;
+
+            if(!list.length) {
+                document.getElementById('tenderList').innerHTML = '<div class="empty-state">暂无数据</div>';
+                return;
+            }
+
+            const html = list.map(t => {
+                const isExpired = t.status === 'expired' || (t.deadline && t.deadline < new Date().toISOString().split('T')[0]);
+                let tagList = [];
+                try {
+                    tagList = t.tags ? JSON.parse(t.tags) : [];
+                } catch(e) { tagList = []; }
+                
+                return `
+                <div class="tender-item ${isExpired ? 'expired' : ''}">
+                    <div class="tender-title">${t.title}</div>
+                    <div class="tender-meta">
+                        <span class="badge badge-${t.source_type}">${t.source_name || '未知源头'}</span>
+                        <span>预算: ${t.amount || '未公开'}</span>
+                        <span>发布: ${t.publish_date}</span>
+                        ${t.deadline ? `<span>截止: ${t.deadline}</span>` : ''}
+                        <span>状态: ${isExpired ? '已过期' : '进行中'}</span>
+                    </div>
+                    ${tagList.length ? `<div style="margin:8px 0;">${tagList.map(tag => `<span class="tag" style="background:${getTagColor(tag)}">${tag}</span>`).join('')}</div>` : ''}
+                    ${t.note ? `<div class="tender-note">${t.note}</div>` : ''}
+                    <div class="tender-actions">
+                        <button class="btn btn-sm btn-primary" onclick="editTender(${t.id})">编辑</button>
+                        <a href="${t.url}" target="_blank" class="btn btn-sm">查看原文</a>
+                    </div>
+                </div>`;
+            }).join('');
+
+            document.getElementById('tenderList').innerHTML = html;
+        }
+
+        function getTagColor(tagName) {
+            const tag = tags.find(t => t.name === tagName);
+            return tag ? tag.color : '#667eea';
+        }
+
+        function updateStats(list) {
+            document.getElementById('totalCount').textContent = list.length;
+            const now = new Date().toISOString().split('T')[0];
+            const expired = list.filter(t => t.status === 'expired' || (t.deadline && t.deadline < now)).length;
+            const active = list.length - expired;
+            document.getElementById('activeCount').textContent = active;
+            document.getElementById('expiredCount').textContent = expired;
+        }
+
+        async function loadSourcesForFilter() {
+            const category = document.getElementById('filterCategory').value;
+            try {
+                // 同时加载sources和traces
+                const [sourcesRes, tracesRes] = await Promise.all([
+                    fetch('/api/sources'),
+                    fetch('/api/traces')
+                ]);
+
+                const sourcesData = await sourcesRes.json();
+                const tracesData = await tracesRes.json();
+
+                if(sourcesData.success) {
+                    sources = sourcesData.data;
+                    traces = tracesData.success ? tracesData.data : [];
+
+                    // 创建轨迹配置映射：source_id -> { hasListTrace, hasDetailTrace }
+                    const traceMap = {};
+                    traces.forEach(t => {
+                        if(!traceMap[t.source_id]) {
+                            traceMap[t.source_id] = { hasListTrace: false, hasDetailTrace: false };
+                        }
+                        if(t.type === 'list' && t.status === 'active') {
+                            traceMap[t.source_id].hasListTrace = true;
+                        }
+                        if(t.type === 'detail' && t.status === 'active') {
+                            traceMap[t.source_id].hasDetailTrace = true;
+                        }
+                    });
+
+                    const filtered = category ? sources.filter(s => s.category === category) : sources;
+
+                    // 在选项中标识轨迹配置状态
+                    document.getElementById('filterSource').innerHTML = '<option value="">全部源头</option>' +
+                        filtered.map(s => {
+                            const config = traceMap[s.id];
+                            let indicator = '';
+                            if(config && config.hasListTrace) {
+                                indicator = ' ✓';  // 已配置列表轨迹
+                            } else {
+                                indicator = ' ⚠️';  // 未配置轨迹
+                            }
+                            return `<option value="${s.id}" data-has-trace="${config && config.hasListTrace ? 'true' : 'false'}">${s.name}${indicator}</option>`;
+                        }).join('');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function showAddSource() {
+            document.getElementById('sourceModal').classList.add('active');
+        }
+
+        async function saveSource() {
+            const source = {
+                name: document.getElementById('sourceName').value,
+                code: document.getElementById('sourceCode').value,
+                category: document.getElementById('sourceCategory').value,
+                base_url: document.getElementById('sourceBaseURL').value,
+                description: document.getElementById('sourceDesc').value,
+                is_active: 1
+            };
+            
+            try {
+                const res = await fetch('/api/sources', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(source)
+                });
+                const data = await res.json();
+                if(data.success) {
+                    showToast('保存成功', 'success');
+                    closeModal('sourceModal');
+                    loadSources();
+                }
+            } catch(e) { showToast('保存失败', 'error'); }
+        }
+
+        async function deleteSource(id) {
+            if(!confirm('确定删除?')) return;
+            try {
+                await fetch(`/api/sources?id=${id}`, {method: 'DELETE'});
+                showToast('删除成功', 'success');
+                loadSources();
+            } catch(e) { showToast('删除失败', 'error'); }
+        }
+
+        function showUploadTrace() {
+            document.getElementById('traceModal').classList.add('active');
+            loadSourcesForTrace();
+        }
+
+        function loadSourcesForTrace() {
+            const html = sources.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            document.getElementById('traceSource').innerHTML = html;
+        }
+
+        function handleTraceFile(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = e => document.getElementById('traceContent').value = e.target.result;
+            reader.readAsText(file);
+        }
+
+        async function analyzeTrace() {
+            const content = document.getElementById('traceContent').value;
+            if(!content) { showToast('请输入或上传JSON内容', 'error'); return; }
+
+            try {
+                const res = await fetch('/api/traces', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({raw_content: content, analyze: true})
+                });
+                const data = await res.json();
+                if(data.success) {
+                    document.getElementById('traceAnalysis').style.display = 'block';
+                    document.getElementById('analyzedUrl').textContent = data.data.parsed_url || '未找到';
+                    document.getElementById('analyzedType').textContent = data.data.type || '未识别';
+                }
+            } catch(e) { showToast('分析失败', 'error'); }
+        }
+
+        async function saveTrace() {
+            const sourceIdVal = document.getElementById('traceSource').value;
+            const trace = {
+                raw_content: document.getElementById('traceContent').value,
+                source_id: sourceIdVal ? parseInt(sourceIdVal) : 0,
+                name: document.getElementById('traceName').value,
+                type: document.getElementById('traceType').value
+            };
+            if(!trace.raw_content || !trace.name) { showToast('请填写完整信息', 'error'); return; }
+
+            try {
+                const res = await fetch('/api/traces', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(trace)});
+                const data = await res.json();
+                if(data.success) {
+                    showToast('保存成功', 'success');
+                    closeModal('traceModal');
+                    loadTraces();
+                } else {
+                    showToast('保存失败: ' + (data.error || '未知错误'), 'error');
+                }
+            } catch(e) { showToast('保存失败: ' + e.message, 'error'); }
+        }
+
+        function editTender(id) {
+            const t = tenders.find(t => t.id === id);
+            if(!t) return;
+            
+            document.getElementById('editTenderId').value = id;
+            document.getElementById('tenderNote').value = t.note || '';
+            
+            let currentTags = [];
+            try { currentTags = t.tags ? JSON.parse(t.tags) : []; } catch(e) { currentTags = []; }
+            const html = tags.map(tag => `
+                <label style="display:flex;align-items:center;gap:5px;">
+                    <input type="checkbox" value="${tag.name}" ${currentTags.includes(tag.name) ? 'checked' : ''}>
+                    <span class="tag" style="background:${tag.color}">${tag.name}</span>
+                </label>
+            `).join('');
+            document.getElementById('tagCheckboxes').innerHTML = html;
+            
+            document.getElementById('tagModal').classList.add('active');
+        }
+
+        async function saveTenderEdit() {
+            const id = document.getElementById('editTenderId').value;
+            const selectedTags = Array.from(document.querySelectorAll('#tagCheckboxes input:checked')).map(cb => cb.value);
+            
+            try {
+                await fetch('/api/tender/update', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id: parseInt(id), tags: JSON.stringify(selectedTags), note: document.getElementById('tenderNote').value})
+                });
+                showToast('保存成功', 'success');
+                closeModal('tagModal');
+                loadTenders();
+            } catch(e) { showToast('保存失败', 'error'); }
+        }
+
+        async function startCollect() {
+            const sourceSelect = document.getElementById('filterSource');
+            const sourceId = sourceSelect.value;
+            const sourceID = sourceId ? parseInt(sourceId) : 0;
+
+            // 从输入框读取关键词
+            const keywordInput = document.getElementById('filterKeyword').value.trim();
+            let keywords;
+
+            if(keywordInput) {
+                // 支持逗号、分号、空格分割
+                keywords = keywordInput.split(/[,，;；\s]+/).filter(k => k.length > 0);
+            } else {
+                // 没有输入时使用默认关键词
+                keywords = ['软件', '软件开发', '信息化', '系统集成'];
+            }
+
+            if(sourceID === 0) {
+                showToast('请先选择采集源', 'error');
+                return;
+            }
+
+            if(keywords.length === 0) {
+                showToast('请输入采集关键词', 'error');
+                return;
+            }
+
+            // 检查所选采集源是否配置了轨迹
+            const selectedOption = sourceSelect.options[sourceSelect.selectedIndex];
+            const hasTrace = selectedOption.getAttribute('data-has-trace') === 'true';
+            const sourceName = selectedOption.text.replace(' ⚠️', '').replace(' ✓', '');
+
+            if(!hasTrace) {
+                const confirmed = confirm(
+                    `采集源"${sourceName}"尚未配置采集轨迹，无法启动采集任务。\n\n` +
+                    `请在"轨迹管理"标签页中上传该采集源的轨迹文件（list类型）。\n\n` +
+                    `是否现在前往轨迹管理页面？`
+                );
+                if(confirmed) {
+                    // 切换到轨迹管理标签页
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                    document.querySelector('.nav-tab[data-panel="traces"]').classList.add('active');
+                    document.getElementById('traces-panel').classList.add('active');
+                    loadTraces();
+                }
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/collect', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({source_id: sourceID, keywords})
+                });
+                const data = await res.json();
+                if(data.success) {
+                    showToast(`采集任务已启动 (关键词: ${keywords.join(', ')})`, 'success');
+                    // 切换到任务列表标签页查看进度
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                    document.querySelector('.nav-tab[data-panel="tasks"]').classList.add('active');
+                    document.getElementById('tasks-panel').classList.add('active');
+                    loadCollectTasks();
+                } else {
+                    showToast(data.error || '启动失败', 'error');
+                }
+            } catch(e) {
+                showToast('启动失败: ' + e.message, 'error');
+            }
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.className = `toast toast-${type} show`;
+            document.getElementById('toastMessage').textContent = msg;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // 分页相关函数
+        function updatePaginationUI(page, total_pages, total) {
+            currentPage = page;
+            totalPages = total_pages;
+
+            document.getElementById('currentPageDisplay').textContent = page;
+            document.getElementById('totalPagesDisplay').textContent = total_pages;
+
+            const container = document.getElementById('paginationButtons');
+            container.innerHTML = '';
+            container.style.display = 'flex';
+            container.style.gap = '5px';
+            container.style.alignItems = 'center';
+
+            if (total_pages <= 1) {
+                container.style.display = 'none';
+                return;
+            }
+
+            // 首页按钮
+            addPageButton(container, '首页', 1, page === 1, false);
+
+            // 上一页按钮
+            addPageButton(container, '上一页', page - 1, page === 1, false);
+
+            // 页码按钮（智能显示）
+            const maxButtons = 7;
+            let startPage, endPage;
+
+            if (total_pages <= maxButtons) {
+                startPage = 1;
+                endPage = total_pages;
+            } else {
+                const halfButtons = Math.floor(maxButtons / 2);
+                if (page <= halfButtons + 1) {
+                    startPage = 1;
+                    endPage = maxButtons - 1;
+                } else if (page >= total_pages - halfButtons) {
+                    startPage = total_pages - maxButtons + 2;
+                    endPage = total_pages;
+                } else {
+                    startPage = page - halfButtons + 1;
+                    endPage = page + halfButtons - 1;
+                }
+            }
+
+            if (startPage > 1) {
+                addPageButton(container, '1', 1, false, page === 1);
+                if (startPage > 2) {
+                    container.appendChild(createEllipsis());
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                addPageButton(container, i.toString(), i, false, page === i);
+            }
+
+            if (endPage < total_pages) {
+                if (endPage < total_pages - 1) {
+                    container.appendChild(createEllipsis());
+                }
+                addPageButton(container, total_pages.toString(), total_pages, false, page === total_pages);
+            }
+
+            // 下一页按钮
+            addPageButton(container, '下一页', page + 1, page === total_pages, false);
+
+            // 末页按钮
+            addPageButton(container, '末页', total_pages, page === total_pages, false);
+        }
+
+        function addPageButton(container, text, targetPage, disabled, isActive) {
+            const btn = document.createElement('button');
+            btn.textContent = text;
+            btn.className = 'btn btn-sm';
+            btn.style.minWidth = '60px';
+            btn.style.padding = '5px 10px';
+            btn.style.fontSize = '12px';
+
+            if (disabled) {
+                btn.disabled = true;
+                btn.style.background = '#e0e0e0';
+                btn.style.color = '#999';
+                btn.style.cursor = 'not-allowed';
+            } else if (isActive) {
+                btn.style.background = '#667eea';
+                btn.style.color = 'white';
+            } else {
+                btn.style.background = 'white';
+                btn.style.color = '#333';
+                btn.style.border = '1px solid #e0e0e0';
+                btn.onclick = () => loadTenders(targetPage);
+            }
+
+            container.appendChild(btn);
+        }
+
+        function createEllipsis() {
+            const span = document.createElement('span');
+            span.textContent = '...';
+            span.style.padding = '0 5px';
+            span.style.color = '#666';
+            return span;
+        }
+
+        function changePageSize() {
+            currentPageSize = parseInt(document.getElementById('pageSizeSelect').value);
+            loadTenders(1); // 切换每页条数时跳转到第1页
+        }
+
+        // 取消任务
+        async function cancelTask(taskId) {
+            if (!confirm('确定要取消此采集任务吗？')) return;
+
+            try {
+                const res = await fetch(`/api/collect/task/cancel?id=${taskId}`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast('任务已取消', 'success');
+                    loadCollectTasks();
+                } else {
+                    showToast(data.message || '取消失败', 'error');
+                }
+            } catch (e) {
+                showToast('取消任务失败: ' + e.message, 'error');
+            }
+        }
+
+        // 导出相关函数
+        function toggleExportMenu() {
+            const menu = document.getElementById('exportMenu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // 点击其他地方关闭导出菜单
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('exportMenu');
+            if (menu && !e.target.closest('button[onclick="toggleExportMenu()"]') && !e.target.closest('#exportMenu')) {
+                menu.style.display = 'none';
+            }
+        });
+
+        function exportData(format) {
+            document.getElementById('exportMenu').style.display = 'none';
+
+            const params = new URLSearchParams();
+
+            // 构建与当前查询相同的参数
+            const category = document.getElementById('filterCategory').value;
+            const source = document.getElementById('filterSource').value;
+            const status = document.getElementById('filterStatus').value;
+            const keyword = document.getElementById('filterKeyword').value;
+            const matchMode = document.getElementById('filterMatchMode')?.value;
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+
+            if(category) params.append('category', category);
+            if(source) params.append('source_id', source);
+            if(status) params.append('status', status);
+            if(keyword) params.append('keyword', keyword);
+            if(matchMode) params.append('match_mode', matchMode);
+            if(dateFrom) params.append('date_from', dateFrom);
+            if(dateTo) params.append('date_to', dateTo);
+            params.append('limit', '10000');
+
+            const endpoint = format === 'csv' ? '/api/tenders/export/csv' : '/api/tenders/export/excel';
+            const url = `${endpoint}?${params}`;
+
+            showToast('正在准备导出，请稍候...', 'success');
+
+            // 使用隐藏iframe下载
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = url;
+            document.body.appendChild(iframe);
+
+            setTimeout(() => document.body.removeChild(iframe), 3000);
+        }
+
+        // 初始化
+        window.onload = () => { loadTags(); loadSources(); loadSourcesForFilter(); loadTenders(); };
+    </script>
+</body>
+</html>
