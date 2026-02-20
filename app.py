@@ -76,22 +76,32 @@ async def health_check():
     }
 
 
-# 根路由 - 返回前端页面
+# 根路由 - 返回Dashboard页面
 @app.get("/")
 async def root():
-    """返回前端首页"""
+    """返回Dashboard首页"""
+    dashboard_path = Path("dashboard.html")
+    if dashboard_path.exists():
+        return FileResponse(dashboard_path)
+
+    # 回退到旧的static/index.html
     index_path = Path(STATIC_DIR) / "index.html"
     if index_path.exists():
         return FileResponse(index_path)
+
     return JSONResponse(
         status_code=404,
-        content={"error": "前端页面未找到，请先迁移 static/index.html"}
+        content={"error": "Dashboard页面未找到"}
     )
 
 
-# 挂载静态文件目录（如果存在）
+# 挂载静态文件目录
 if Path(STATIC_DIR).exists():
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# 挂载output目录（用于访问报告文件）
+if Path("output").exists():
+    app.mount("/output", StaticFiles(directory="output"), name="output")
 
 
 # 注册API路由
@@ -107,6 +117,10 @@ except ImportError as e:
 # 注册招标推送API（Windows客户端推送）
 from api import tender_push
 app.include_router(tender_push.router)
+
+# 注册Dashboard API
+from api import dashboard
+app.include_router(dashboard.router)
 
 
 if __name__ == "__main__":

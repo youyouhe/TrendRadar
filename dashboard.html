@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrendRadar Dashboard - 趋势雷达控制台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" v-cloak>
+        <!-- 顶部导航 -->
+        <nav class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-900">📡 TrendRadar</h1>
+                        <span class="ml-3 text-sm text-gray-500">趋势雷达控制台</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button
+                            @click="currentView = 'dashboard'"
+                            :class="currentView === 'dashboard' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-900'"
+                            class="px-3 py-2 text-sm font-medium">
+                            📊 总览
+                        </button>
+                        <button
+                            @click="currentView = 'reports'"
+                            :class="currentView === 'reports' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-900'"
+                            class="px-3 py-2 text-sm font-medium">
+                            📄 报告历史
+                        </button>
+                        <button
+                            @click="currentView = 'tenders'"
+                            :class="currentView === 'tenders' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-900'"
+                            class="px-3 py-2 text-sm font-medium">
+                            🏢 招标信息
+                        </button>
+                        <button
+                            @click="refreshData"
+                            class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900">
+                            🔄 刷新
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主内容区 -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Dashboard视图 -->
+            <div v-if="currentView === 'dashboard'" class="space-y-6">
+                <!-- 统计卡片 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">总报告数</p>
+                                <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.total_reports }}</p>
+                                <p class="text-xs text-gray-500 mt-1">近7天: {{ stats.reports_last_7days }}</p>
+                            </div>
+                            <div class="text-4xl">📄</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">招标信息</p>
+                                <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.total_tenders }}</p>
+                                <p class="text-xs text-gray-500 mt-1">近7天: {{ stats.tenders_last_7days }}</p>
+                            </div>
+                            <div class="text-4xl">🏢</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">最新更新</p>
+                                <p class="text-sm font-semibold text-gray-900 mt-2">
+                                    {{ formatTime(stats.latest_report_time) }}
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">报告时间</p>
+                            </div>
+                            <div class="text-4xl">⏰</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 最新报告预览 -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">最新报告</h2>
+                    </div>
+                    <div class="p-6">
+                        <iframe
+                            id="report-frame"
+                            src="/api/dashboard/reports/latest"
+                            class="w-full h-[600px] border border-gray-200 rounded"
+                            @load="onReportLoad">
+                        </iframe>
+                    </div>
+                </div>
+
+                <!-- 最近招标 -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-gray-900">最近招标信息</h2>
+                        <button
+                            @click="currentView = 'tenders'"
+                            class="text-sm text-blue-600 hover:text-blue-800">
+                            查看全部 →
+                        </button>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        <div
+                            v-for="tender in recentTenders"
+                            :key="tender.url"
+                            class="px-6 py-4 hover:bg-gray-50">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <a :href="tender.url" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">
+                                        {{ tender.title }}
+                                    </a>
+                                    <div class="mt-1 flex items-center space-x-4 text-sm text-gray-500">
+                                        <span>📍 {{ tender.source_name }}</span>
+                                        <span v-if="tender.amount">💰 {{ tender.amount }}万元</span>
+                                        <span v-if="tender.publish_date">📅 {{ tender.publish_date }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="recentTenders.length === 0" class="px-6 py-8 text-center text-gray-500">
+                            暂无招标信息
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 报告历史视图 -->
+            <div v-if="currentView === 'reports'" class="space-y-6">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">报告历史</h2>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        <div
+                            v-for="report in reports"
+                            :key="report.file_path"
+                            class="px-6 py-4 hover:bg-gray-50 cursor-pointer"
+                            @click="viewReport(report)">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ report.filename }}</p>
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        📅 {{ report.date }} {{ report.time }} · {{ formatSize(report.size) }}
+                                    </p>
+                                </div>
+                                <button class="text-blue-600 hover:text-blue-800 text-sm">查看 →</button>
+                            </div>
+                        </div>
+                        <div v-if="reports.length === 0" class="px-6 py-8 text-center text-gray-500">
+                            暂无报告
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 招标信息视图 -->
+            <div v-if="currentView === 'tenders'" class="space-y-6">
+                <!-- 搜索框 -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex space-x-4">
+                        <input
+                            v-model="tenderSearch"
+                            @keyup.enter="searchTenders"
+                            type="text"
+                            placeholder="搜索招标标题..."
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button
+                            @click="searchTenders"
+                            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            🔍 搜索
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 招标列表 -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">
+                            招标信息列表
+                            <span v-if="searchResults.count" class="text-sm text-gray-500 ml-2">
+                                (共 {{ searchResults.count }} 条)
+                            </span>
+                        </h2>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        <div
+                            v-for="tender in (searchResults.tenders || recentTenders)"
+                            :key="tender.url"
+                            class="px-6 py-4 hover:bg-gray-50">
+                            <div class="space-y-2">
+                                <a :href="tender.url" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium block">
+                                    {{ tender.title }}
+                                </a>
+                                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                                    <span>📍 {{ tender.source_name }}</span>
+                                    <span v-if="tender.amount" class="font-semibold text-green-600">💰 {{ tender.amount }}万元</span>
+                                    <span v-if="tender.publish_date">📅 {{ tender.publish_date }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="(searchResults.tenders || recentTenders).length === 0" class="px-6 py-8 text-center text-gray-500">
+                            暂无结果
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 加载中 -->
+            <div v-if="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg p-8">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p class="mt-4 text-gray-600">加载中...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentView: 'dashboard',
+                    loading: false,
+                    stats: {
+                        total_reports: 0,
+                        total_tenders: 0,
+                        latest_report_time: null,
+                        latest_tender_time: null,
+                        reports_last_7days: 0,
+                        tenders_last_7days: 0
+                    },
+                    reports: [],
+                    recentTenders: [],
+                    tenderSearch: '',
+                    searchResults: {}
+                };
+            },
+            mounted() {
+                this.loadDashboard();
+            },
+            methods: {
+                async loadDashboard() {
+                    this.loading = true;
+                    try {
+                        await Promise.all([
+                            this.loadStats(),
+                            this.loadReports(),
+                            this.loadRecentTenders()
+                        ]);
+                    } catch (error) {
+                        console.error('加载失败:', error);
+                        alert('加载数据失败，请检查服务是否启动');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async loadStats() {
+                    const response = await axios.get('/api/dashboard/stats');
+                    this.stats = response.data;
+                },
+                async loadReports() {
+                    const response = await axios.get('/api/dashboard/reports?limit=50');
+                    this.reports = response.data;
+                },
+                async loadRecentTenders() {
+                    const response = await axios.get('/api/dashboard/tenders/recent?limit=20');
+                    this.recentTenders = response.data;
+                },
+                async searchTenders() {
+                    if (!this.tenderSearch.trim()) {
+                        this.searchResults = {};
+                        return;
+                    }
+
+                    this.loading = true;
+                    try {
+                        const response = await axios.get('/api/dashboard/tenders/search', {
+                            params: { keyword: this.tenderSearch }
+                        });
+                        this.searchResults = response.data;
+                    } catch (error) {
+                        console.error('搜索失败:', error);
+                        alert('搜索失败');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async refreshData() {
+                    await this.loadDashboard();
+                },
+                viewReport(report) {
+                    const url = `/api/dashboard/reports/file?file_path=${encodeURIComponent(report.file_path)}`;
+                    window.open(url, '_blank');
+                },
+                formatTime(isoString) {
+                    if (!isoString) return '暂无';
+                    const date = new Date(isoString);
+                    return date.toLocaleString('zh-CN');
+                },
+                formatSize(bytes) {
+                    if (bytes < 1024) return bytes + ' B';
+                    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                },
+                onReportLoad() {
+                    console.log('报告加载完成');
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
